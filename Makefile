@@ -82,3 +82,7 @@ clean:
 	$(MAKE) -C rt clean
 	$(MAKE) -C util clean
 	rm -rf $(BUILD)
+
+deps: $(DEBUG_DEPFILE) $(RELEASE_DEPFILE)
+	$(MAKE) -C rt deps
+	$(MAKE) -C util deps
