@@ -25,40 +25,51 @@ $(RELEASE_MANIFEST):
 	touch $@
 
 $(DEBUG_BUILD)/%.d: %.cpp $(DEBUG_MANIFEST)
-	$(CXX_EMIT_DEPFILE_DEBUG) $(@:.d=.o) $< $(EMIT_DEPFILE_TO) $@
+	$(CXX_EMIT_DEPFILE_DEBUG) $(@:.d=.o) $< $(FREESTANDING_FLAGS) $(EMIT_DEPFILE_TO) $@
 	rm $(@:.d=.o)
 
 $(RELEASE_BUILD)/%.d: %.cpp $(RELEASE_MANIFEST)
-	$(CXX_EMIT_DEPFILE_RELEASE) $(@:.d=.o) $< $(EMIT_DEPFILE_TO) $@
+	$(CXX_EMIT_DEPFILE_RELEASE) $(@:.d=.o) $< $(FREESTANDING_FLAGS) $(EMIT_DEPFILE_TO) $@
 	rm $(@:.d=.o)
 
 include $(DEBUG_DEPFILE_INCLUDE)
 include $(RELEASE_DEPFILE_INCLUDE)
 
-$(DEBUG_BUILD)/%.o: %.cpp
-	$(CXX_COMPILE_DEBUG) $@ $<
+$(DEBUG_BUILD)/%.o: %.cpp $(DEBUG_MANIFEST)
+	$(CXX_COMPILE_DEBUG) $@ $< $(FREESTANDING_FLAGS)
 
-$(RELEASE_BUILD)/%.o: %.cpp
-	$(CXX_COMPILE_RELEASE) $@ $<
+$(RELEASE_BUILD)/%.o: %.cpp $(RELEASE_MANIFEST)
+	$(CXX_COMPILE_RELEASE) $@ $< $(FREESTANDING_FLAGS)
 
 # Products
 
-librt.a-debug: $(DEBUG_MANIFEST)
+$(DEBUG_BUILD)/librt.a: $(DEBUG_MANIFEST)
 	$(MAKE) -C rt librt.a-debug
+	cp rt/$(DEBUG_BUILD)/librt.a $@
+	cp -r rt/$(DEBUG_BUILD)/include $(DEBUG_BUILD)/include/rt
 
-librt.a-release: $(RELEASE_MANIFEST)
+$(RELEASE_BUILD)/librt.a: $(RELEASE_MANIFEST)
 	$(MAKE) -C rt librt.a-release
+	cp rt/$(RELEASE_BUILD)/librt.a $@
+	cp -r rt/$(RELEASE_BUILD)/include $(RELEASE_BUILD)/include/rt
 
-libutil.a-debug: $(DEBUG_MANIFEST)
+$(DEBUG_BUILD)/libutil.a: $(DEBUG_MANIFEST)
 	$(MAKE) -C util libutil.a-debug
+	cp util/$(DEBUG_BUILD)/libutil.a $@
+	cp -r util/$(DEBUG_BUILD)/include $(DEBUG_BUILD)/include/util
 
-libutil.a-release: $(RELEASE_MANIFEST)
+$(RELEASE_BUILD)/libutil.a: $(RELEASE_MANIFEST)
 	$(MAKE) -C util libutil.a-release
+	cp util/$(RELEASE_BUILD)/libutil.a $@
+	cp -r util/$(RELEASE_BUILD)/include $(RELEASE_BUILD)/include/util
 
-libasm.a-debug: $(DEBUG_MANIFEST) $(DEBUG_DEPFILE) $(DEBUG_HEADERS) $(DEBUG_OBJS) librt.a-debug libutil.a-debug
+debug-libs: $(DEBUG_BUILD)/librt.a $(DEBUG_BUILD)/libutil.a
+release-libs: $(RELEASE_BUILD)/librt.a $(RELEASE_BUILD)/libutil.a
+
+libasm.a-debug: $(DEBUG_MANIFEST) $(DEBUG_DEPFILE) $(DEBUG_HEADERS) $(DEBUG_OBJS)
 	ar rcs $(DEBUG_BUILD)/libasm.a $(DEBUG_OBJS)
 
-libasm.a-release: $(RELEASE_MANIFEST) $(RELEASE_DEPFILE) $(RELEASE_HEADERS) $(RELEASE_OBJS) librt.a-release libutil.a-release
+libasm.a-release: $(RELEASE_MANIFEST) $(RELEASE_DEPFILE) $(RELEASE_HEADERS) $(RELEASE_OBJS)
 	ar rcs $(RELEASE_BUILD)/libasm.a $(RELEASE_OBJS)
 
 debug: libasm.a-debug
