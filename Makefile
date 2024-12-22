@@ -1,15 +1,14 @@
 # Platform properties
 
-RT_DIR = util/rt
-DETECT = $(RT_DIR)/detect
-include $(RT_DIR)/Platform.mk
+DETECT = rt/detect
+include rt/Platform.mk
 
 # Sources
 
 CXX_HEADERS = $(wildcard *.h) $(wildcard arch/*.h)
 CXX_SOURCES = $(wildcard *.cpp) $(wildcard arch/*.cpp)
 
-include $(RT_DIR)/Common.mk
+include rt/Common.mk
 
 # Build rules
 
@@ -45,10 +44,10 @@ $(RELEASE_BUILD)/%.o: %.cpp
 # Products
 
 librt.a-debug: $(DEBUG_MANIFEST)
-	$(MAKE) -C util/rt librt.a-debug
+	$(MAKE) -C rt librt.a-debug
 
 librt.a-release: $(RELEASE_MANIFEST)
-	$(MAKE) -C util/rt librt.a-release
+	$(MAKE) -C rt librt.a-release
 
 libutil.a-debug: $(DEBUG_MANIFEST)
 	$(MAKE) -C util libutil.a-debug
@@ -70,13 +69,16 @@ release: libasm.a-release
 .PHONY: clean-debug clean-release clean
 
 clean-debug:
+	$(MAKE) -C rt clean-debug
 	$(MAKE) -C util clean-debug
 	rm -rf $(DEBUG_BUILD)
 
 clean-release:
+	$(MAKE) -C rt clean-release
 	$(MAKE) -C util clean-release
 	rm -rf $(RELEASE_BUILD)
 
 clean:
+	$(MAKE) -C rt clean
 	$(MAKE) -C util clean
 	rm -rf $(BUILD)

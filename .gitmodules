@@ -1,3 +1,6 @@
 [submodule "util"]
 	path = util
 	url = git@github.com:elucent/util.git
+[submodule "rt"]
+	path = rt
+	url = git@github.com:elucent/rt.git
