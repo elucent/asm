@@ -1,14 +1,15 @@
 # Platform properties
 
-DETECT = util/rt/detect
-include util/rt/Platform.mk
+RT_DIR = util/rt
+DETECT = $(RT_DIR)/detect
+include $(RT_DIR)/Platform.mk
 
 # Sources
 
 CXX_HEADERS = $(wildcard *.h) $(wildcard arch/*.h)
 CXX_SOURCES = $(wildcard *.cpp) $(wildcard arch/*.cpp)
 
-include util/rt/Common.mk
+include $(RT_DIR)/Common.mk
 
 # Build rules
 

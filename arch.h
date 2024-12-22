@@ -732,6 +732,8 @@ inline constexpr Condition invert(Condition condition) {
         case COND_AE: return COND_BELOW;
         case COND_EQ: return COND_NE;
         case COND_NE: return COND_EQ;
+        case COND_TEST_ZERO: return COND_TEST_NONZERO;
+        case COND_TEST_NONZERO: return COND_TEST_ZERO;
     }
 }
 
@@ -1272,7 +1274,7 @@ struct FakeAssembler {
     }
 
     static inline const_slice<i8> reg_name(mreg r) {
-        return const_slice<i8>{ ASM_REGISTER_NAMES[r], findc(ASM_REGISTER_NAMES[r], '\0') };
+        return const_slice<i8>{ ASM_REGISTER_NAMES[i32(r)], findc(ASM_REGISTER_NAMES[i32(r)], '\0') };
     }
 
     static inline Size word_size() {

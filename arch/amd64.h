@@ -39,8 +39,8 @@ struct AMD64Assembler {
     }
 
     static constexpr inline const_slice<i8> reg_name(mreg r) {
-        if (r < XMM0) return { GP_REG_NAMES[r], findc(GP_REG_NAMES[r], 0) };
-        else return { FP_REG_NAMES[r - XMM0], findc(FP_REG_NAMES[r - XMM0], 0) };
+        if (r < XMM0) return { GP_REG_NAMES[i32(r)], findc(GP_REG_NAMES[i32(r)], 0) };
+        else return { FP_REG_NAMES[i32(r - XMM0)], findc(FP_REG_NAMES[i32(r - XMM0)], 0) };
     }
 
     static constexpr inline Size word_size() {
