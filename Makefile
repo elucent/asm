@@ -32,8 +32,8 @@ $(RELEASE_BUILD)/%.d: %.cpp $(RELEASE_MANIFEST)
 	$(CXX_EMIT_DEPFILE_RELEASE) $(@:.d=.o) $< $(EMIT_DEPFILE_TO) $@
 	rm $(@:.d=.o)
 
-include $(DEBUG_DEPFILE)
-include $(RELEASE_DEPFILE)
+include $(DEBUG_DEPFILE_INCLUDE)
+include $(RELEASE_DEPFILE_INCLUDE)
 
 $(DEBUG_BUILD)/%.o: %.cpp
 	$(CXX_COMPILE_DEBUG) $@ $<
