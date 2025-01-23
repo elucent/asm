@@ -12,7 +12,7 @@ RT_PATH := rt
 include rt/build/Products.mk
 
 UTIL_PATH := util
-include build/Products.mk
+include util/build/Products.mk
 
 ASM_PATH := .
 include build/Products.mk
@@ -58,6 +58,16 @@ libasm.a-release: $(RELEASE_MANIFEST) $(RELEASE_HEADERS) $(RELEASE_OBJS)
 libasm.so-release: $(RELEASE_MANIFEST) $(RELEASE_HEADERS)  $(RELEASE_OBJS)
 	cat $(RELEASE_DEPFILES) > $(RELEASE_DEPFILE)
 	$(CXX_LINK_SHARED_RELEASE) $(RELEASE_BUILD)/libasm.so $<
+
+test-asm-debug: $(DEBUG_MANIFEST) $(DEBUG_HEADERS) $(DEBUG_OBJS) $(TEST_HARNESS_DEBUG_OBJS) $(RT_ENTRY_DEBUG_OBJS) $(ASM_TEST_DEBUG_OBJS)
+	cat $(DEBUG_DEPFILES) > $(DEBUG_DEPFILE)
+	$(LINK_TESTS) $(DEBUG_BUILD)/test-asm.cpp $(ASM_TEST_DEBUG_OBJS)
+	$(CXX_LINK_EXECUTABLE_DEBUG) $(DEBUG_BUILD)/test-asm $(DEBUG_BUILD)/test-asm.cpp $(DEBUG_OBJS) $(TEST_HARNESS_DEBUG_OBJS) $(RT_ENTRY_DEBUG_OBJS) $(ASM_TEST_DEBUG_OBJS)
+
+test-asm-release: $(RELEASE_MANIFEST) $(RELEASE_HEADERS) $(RELEASE_OBJS) $(TEST_HARNESS_RELEASE_OBJS) $(RT_ENTRY_RELEASE_OBJS) $(ASM_TEST_RELEASE_OBJS)
+	cat $(RELEASE_DEPFILES) > $(RELEASE_DEPFILE)
+	$(LINK_TESTS) $(RELEASE_BUILD)/test-asm.cpp $(ASM_TEST_RELEASE_OBJS)
+	$(CXX_LINK_EXECUTABLE_RELEASE) $(RELEASE_BUILD)/test-asm $(RELEASE_BUILD)/test-asm.cpp $(RELEASE_OBJS) $(TEST_HARNESS_RELEASE_OBJS) $(RT_ENTRY_RELEASE_OBJS) $(ASM_TEST_RELEASE_OBJS)
 
 debug: libasm.a-debug libasm.so-debug
 release: libasm.a-release libasm.so-release

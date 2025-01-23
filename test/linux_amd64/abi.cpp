@@ -1,4 +1,4 @@
-#include "test/harness.h"
+#include "util/test/harness.h"
 #include "asm/arch/amd64.h"
 
 using Assembler = AMD64LinuxAssembler;

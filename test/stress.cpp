@@ -1,5 +1,5 @@
 #include "asm/arch.h"
-#include "test/harness.h"
+#include "util/test/harness.h"
 
 #if defined(RT_AMD64) && defined(RT_LINUX)
     #include "asm/arch/amd64.h"
