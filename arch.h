@@ -434,7 +434,6 @@ struct MaybePair {
 
 // Abstract representation of a symbol location.
 struct Def {
-
     i32 offset;
     Symbol sym;
     Section section;
@@ -532,6 +531,8 @@ struct LinkedAssembly {
             print(hex((u8)i, 2), ' ');
         println();
     }
+
+    void writeELFExecutable(fd file);
 };
 
 // Collection of buffers for target-specific code.
@@ -652,6 +653,8 @@ struct Assembly {
 
         return io;
     }
+
+    void writeELFObject(fd file);
 };
 
 struct Offsets {
