@@ -108,6 +108,7 @@ struct ELFSymbolInfo {
     u32 nameOffset;
     u32 offset; // -1 if undefined
     Section section;
+    DefType type;
 };
 
 void Assembly::writeELFObject(fd file) {
@@ -299,9 +300,9 @@ void Assembly::writeELFObject(fd file) {
     stringTable.write<u8>(0); // First string is always empty.
     map<Symbol, ELFSymbolInfo> symbols;
     for (Def def : defs) if (!symbols.contains(def.sym))
-        symbols.put(def.sym, { 0, 0, (u32)def.offset, def.section });
+        symbols.put(def.sym, { 0, 0, (u32)def.offset, def.section, def.type });
     for (Reloc reloc : relocs) if (!symbols.contains(reloc.sym))
-        symbols.put(reloc.sym, { 0, 0, 0xffffffffu, CODE_SECTION });
+        symbols.put(reloc.sym, { 0, 0, 0xffffffffu, CODE_SECTION, DEF_GLOBAL }); // If a symbol is referenced only in relocations, it must not be defined locally, so it must be global.
     u32 cumulativeOffset = 1;
     u32 symbolIndex = 1;
     for (auto& entry : symbols) {
@@ -361,7 +362,7 @@ void Assembly::writeELFObject(fd file) {
             shndx = SHN_UNDEF;
 
         symbolTable.writeLE<u32>(entry.value.nameOffset); // st_name : u32 (we generated strings in definition order, so st_name can just be the cumulative offset)
-        symbolTable.write<u8>(symbolInfo(STB_GLOBAL, STT_NOTYPE)); // st_info : u8
+        symbolTable.write<u8>(symbolInfo(entry.value.type == DEF_GLOBAL ? STB_GLOBAL : STB_LOCAL, STT_NOTYPE)); // st_info : u8
         symbolTable.write<u8>(STV_DEFAULT); // st_other : u8, we just use default visibility
         symbolTable.writeLE<u16>(shndx);
         symbolTable.writeLE<uptr>(entry.value.offset == 0xffffffffu ? 0 : entry.value.offset); // st_value : uptr (since it's relative to the start of the section, we can use the same offset)

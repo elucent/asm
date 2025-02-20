@@ -263,6 +263,10 @@ enum Section : u8 {
     CODE_SECTION, DATA_SECTION, STATIC_SECTION
 };
 
+enum DefType : u8 {
+    DEF_GLOBAL, DEF_LOCAL
+};
+
 // Machine-level value.
 union ASMVal {
     enum Kind : u8 {
@@ -437,11 +441,12 @@ struct Def {
     i32 offset;
     Symbol sym;
     Section section;
+    DefType type;
 
     inline Def() {}
 
-    inline Def(Section section_in, i32 offset_in, Symbol sym_in):
-        offset(offset_in), sym(sym_in), section(section_in) {}
+    inline Def(Section section_in, DefType type_in, i32 offset_in, Symbol sym_in):
+        offset(offset_in), sym(sym_in), section(section_in), type(type_in) {}
 };
 
 // Abstract representation of a relocation.
@@ -456,8 +461,8 @@ struct Reloc : public Def {
 
     inline Reloc() {}
 
-    inline Reloc(Section section_in, Kind kind_in, i32 offset_in, Symbol sym_in):
-        Def(section_in, offset_in, sym_in), kind(kind_in) {}
+    inline Reloc(Section section_in, DefType type_in, Kind kind_in, i32 offset_in, Symbol sym_in):
+        Def(section_in, type_in, offset_in, sym_in), kind(kind_in) {}
 };
 
 // Unified buffer representing fully-linked code.
@@ -553,24 +558,24 @@ struct Assembly {
         relocs.clear();
     }
 
-    inline void def(Section section, Symbol sym) {
+    inline void def(Section section, DefType type, Symbol sym) {
         bytebuf* ptr;
         switch (section) {
             case CODE_SECTION: ptr = &code; break;
             case DATA_SECTION: ptr = &data; break;
             case STATIC_SECTION: ptr = &stat; break;
         }
-        defs.push(Def(section, ptr->size(), sym));
+        defs.push(Def(section, type, ptr->size(), sym));
     }
 
-    inline void ref(Section section, Reloc::Kind kind, Symbol sym) {
+    inline void ref(Section section, DefType type, Reloc::Kind kind, Symbol sym) {
         bytebuf* ptr;
         switch (section) {
             case CODE_SECTION: ptr = &code; break;
             case DATA_SECTION: ptr = &data; break;
             case STATIC_SECTION: ptr = &stat; break;
         }
-        relocs.push(Reloc(section, kind, ptr->size(), sym));
+        relocs.push(Reloc(section, type, kind, ptr->size(), sym));
     }
 
     void linkInto(LinkedAssembly& linked);

@@ -221,11 +221,14 @@ struct AMD64Assembler {
                     else if (modb == 0b10) as.code.writeLE<i32>(rm.offset);
                     break;
                 case ASMVal::LOCAL_LABEL:
+                as.code.writeLE<i32>(0);
+                    as.ref(CODE_SECTION, DEF_LOCAL, Reloc::REL32_LE, rm.sym);
+                    break;
                 case ASMVal::FUNC_LABEL:
                 case ASMVal::DATA_LABEL:
                 case ASMVal::STATIC_LABEL:
                     as.code.writeLE<i32>(0);
-                    as.ref(CODE_SECTION, Reloc::REL32_LE, rm.sym);
+                    as.ref(CODE_SECTION, DEF_GLOBAL, Reloc::REL32_LE, rm.sym);
                     break;
             }
         }
@@ -1674,14 +1677,14 @@ struct AMD64Assembler {
 
     static inline ASMVal emitF32Constant(Assembly& as, ASMVal src) {
         Symbol label = as.symtab.anon();
-        as.def(DATA_SECTION, label);
+        as.def(DATA_SECTION, DEF_LOCAL, label);
         as.data.writeLE<i32>(*(i32*)&src.f32);
         return Data(label);
     }
 
     static inline ASMVal emitF64Constant(Assembly& as, ASMVal src) {
         Symbol label = as.symtab.anon();
-        as.def(DATA_SECTION, label);
+        as.def(DATA_SECTION, DEF_LOCAL, label);
         as.data.writeLE<i64>(*(i64*)&src.f64);
         return Data(label);
     }
@@ -2072,11 +2075,11 @@ struct AMD64Assembler {
     // Labels
 
     static inline void global(Assembly& as, Symbol sym) {
-        as.def(CODE_SECTION, sym);
+        as.def(CODE_SECTION, DEF_GLOBAL, sym);
     }
 
     static inline void local(Assembly& as, Symbol sym) {
-        as.def(CODE_SECTION, sym);
+        as.def(CODE_SECTION, DEF_LOCAL, sym);
     }
 
     // Jumps
@@ -2087,7 +2090,7 @@ struct AMD64Assembler {
             as.code.write<u8>(0xe9);
             as.code.write<i32>(0);
             assert(dst.memkind == ASMVal::LOCAL_LABEL || dst.memkind == ASMVal::FUNC_LABEL);
-            as.ref(CODE_SECTION, Reloc::REL32_LE, dst.sym);
+            as.ref(CODE_SECTION, dst.memkind == ASMVal::LOCAL_LABEL ? DEF_LOCAL : DEF_GLOBAL, Reloc::REL32_LE, dst.sym);
         }
     }
 
@@ -2096,7 +2099,7 @@ struct AMD64Assembler {
         as.code.write<u8>(0x80 + CCodes[cc]);
         as.code.writeLE<i32>(0);
         assert(dst.memkind == ASMVal::LOCAL_LABEL || dst.memkind == ASMVal::FUNC_LABEL);
-        as.ref(CODE_SECTION, Reloc::REL32_LE, dst.sym);
+        as.ref(CODE_SECTION, dst.memkind == ASMVal::LOCAL_LABEL ? DEF_LOCAL : DEF_GLOBAL, Reloc::REL32_LE, dst.sym);
     }
 
     static inline void jcc(Assembly& as, FloatCondition cc, ASMVal dst) {
@@ -2104,7 +2107,7 @@ struct AMD64Assembler {
         as.code.write<u8>(0x80 + CCodes[cc]);
         as.code.writeLE<i32>(0);
         assert(dst.memkind == ASMVal::LOCAL_LABEL || dst.memkind == ASMVal::FUNC_LABEL);
-        as.ref(CODE_SECTION, Reloc::REL32_LE, dst.sym);
+        as.ref(CODE_SECTION, dst.memkind == ASMVal::LOCAL_LABEL ? DEF_LOCAL : DEF_GLOBAL, Reloc::REL32_LE, dst.sym);
     }
 
     static inline void brz(Assembly& as, ASMVal dst, ASMVal cond) {
@@ -2190,10 +2193,7 @@ struct AMD64Assembler {
             as.code.write<u8>(0xe8);
             as.code.write<i32>(0);
             assert(dst.memkind == ASMVal::LOCAL_LABEL || dst.memkind == ASMVal::FUNC_LABEL);
-            if (dst.memkind == ASMVal::LOCAL_LABEL) 
-                as.ref(CODE_SECTION, Reloc::REL32_LE, dst.sym);
-            else
-                as.ref(CODE_SECTION, Reloc::REL32_LE, dst.sym);
+            as.ref(CODE_SECTION, dst.memkind == ASMVal::LOCAL_LABEL ? DEF_LOCAL : DEF_GLOBAL, Reloc::REL32_LE, dst.sym);
         }
     }
 
