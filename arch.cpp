@@ -103,6 +103,13 @@ void Assembly::linkInto(LinkedAssembly& linked) {
     }
 }
 
+struct ELFSymbolInfo {
+    u32 index;
+    u32 nameOffset;
+    u32 offset; // -1 if undefined
+    Section section;
+};
+
 void Assembly::writeELFObject(fd file) {
     // Overall ELF relocatable object header
 
@@ -290,11 +297,21 @@ void Assembly::writeELFObject(fd file) {
     u32 stringTableOffset = staticSectionOffset + staticSection.size();
     assert(stringTableOffset % 64 == 0);
     stringTable.write<u8>(0); // First string is always empty.
-    for (Def def : defs) {
-        auto str = symtab[def.sym];
+    map<Symbol, ELFSymbolInfo> symbols;
+    for (Def def : defs) if (!symbols.contains(def.sym))
+        symbols.put(def.sym, { 0, 0, (u32)def.offset, def.section });
+    for (Reloc reloc : relocs) if (!symbols.contains(reloc.sym))
+        symbols.put(reloc.sym, { 0, 0, 0xffffffffu, CODE_SECTION });
+    u32 cumulativeOffset = 1;
+    u32 symbolIndex = 1;
+    for (auto& entry : symbols) {
+        auto str = symtab[entry.key];
+        entry.value.nameOffset = cumulativeOffset;
+        entry.value.index = symbolIndex ++;
         stringTable.write(str.data(), str.size());
+        cumulativeOffset += str.size();
         if (str.last() != '\0')
-            stringTable.write<u8>(0);
+            stringTable.write<u8>(0), cumulativeOffset ++;
     }
     while (stringTable.size() % 64) // pad to multiple of 64 bytes
         stringTable.write<u8>(0);
@@ -331,27 +348,24 @@ void Assembly::writeELFObject(fd file) {
     symbolTable.writeLE<uptr>(0); // st_value : uptr = 0
     symbolTable.writeLE<u64>(0); // st_size : u64 = 0
 
-    u32 cumulativeOffset = 1;
-    map<Symbol, pair<u32, u32>> symbolToIndexMap;
-    for (auto [i, def] : enumerate(defs)) {
+    for (const auto& entry : symbols) {
         u16 shndx;
-        symbolToIndexMap.put(def.sym, { (u32)i + 1, cumulativeOffset });
-        switch (def.section) {
+        switch (entry.value.section) {
             case CODE_SECTION: shndx = 2; break; // .text
             case DATA_SECTION: shndx = 3; break; // .rodata
             case STATIC_SECTION: shndx = 4; break; // .data
             default:
                 unreachable("Shouldn't be able to define a symbol in any other section.");
         }
+        if (entry.value.offset == 0xffffffffu)
+            shndx = SHN_UNDEF;
 
-        symbolTable.writeLE<u32>(cumulativeOffset); // st_name : u32 (we generated strings in definition order, so st_name can just be the cumulative offset)
+        symbolTable.writeLE<u32>(entry.value.nameOffset); // st_name : u32 (we generated strings in definition order, so st_name can just be the cumulative offset)
         symbolTable.write<u8>(symbolInfo(STB_GLOBAL, STT_NOTYPE)); // st_info : u8
         symbolTable.write<u8>(STV_DEFAULT); // st_other : u8, we just use default visibility
         symbolTable.writeLE<u16>(shndx);
-        symbolTable.writeLE<uptr>(def.offset); // st_value : uptr (since it's relative to the start of the section, we can use the same offset)
+        symbolTable.writeLE<uptr>(entry.value.offset == 0xffffffffu ? 0 : entry.value.offset); // st_value : uptr (since it's relative to the start of the section, we can use the same offset)
         symbolTable.writeLE<u64>(0); // st_size : u64 = 0
-
-        cumulativeOffset += this->symtab[def.sym].size() + 1;
     }
 
     while (symbolTable.size() % 64) // pad to multiple of 64 bytes
@@ -362,7 +376,7 @@ void Assembly::writeELFObject(fd file) {
     sectionHeaderTable.writeLE<u64>(SHF_MERGE | SHF_ALLOC); // sh_flags : u64 (it should be fine to merge our symbol table with others)
     sectionHeaderTable.writeLE<uptr>(0); // sh_addr : uptr = 0 (we're relocatable; someone will fill this in later)
     sectionHeaderTable.writeLE<u64>(symbolTableOffset); // sh_offset : u64 (text comes after the section header table)
-    sectionHeaderTable.writeLE<u64>(24 * (defs.size() + 1)); // sh_size : u64
+    sectionHeaderTable.writeLE<u64>(24 * (symbols.size() + 1)); // sh_size : u64
     sectionHeaderTable.writeLE<u32>(5); // sh_link : u32 = 5 (.strtab)
     sectionHeaderTable.writeLE<u32>(1); // sh_info : u32 = 2 (currently all symbols but the first are global; in the future this should be used to delineate local symbols)
     sectionHeaderTable.writeLE<u64>(0); // sh_addralign : u64 = 8 (minimum alignment for entry type)
@@ -417,7 +431,7 @@ void Assembly::writeELFObject(fd file) {
             #error "Unsupported architecture for ELF relocations."
         #endif
         buf->writeLE<uptr>(offset); // r_offset : uptr
-        buf->writeLE<u64>(u64(symbolToIndexMap[reloc.sym].first) << 32 | type); // r_info : u64
+        buf->writeLE<u64>(u64(symbols[reloc.sym].index) << 32 | type); // r_info : u64
         buf->writeLE<u64>(addend); // r_addend : u64
     }
     while (textRelocationTable.size() % 64) // pad to multiple of 64 bytes
