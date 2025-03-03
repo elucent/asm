@@ -724,6 +724,32 @@ enum Condition {
     COND_TEST_ZERO, COND_TEST_NONZERO // Test if zero/nonzero with mask.
 };
 
+inline Condition commute(Condition cond) {
+    switch (cond) {
+        case COND_EQ:
+        case COND_NE:
+        case COND_TEST_ZERO:
+        case COND_TEST_NONZERO:
+            return cond;
+        case COND_LT:
+            return COND_GT;
+        case COND_LE:
+            return COND_GE;
+        case COND_GT:
+            return COND_LT;
+        case COND_GE:
+            return COND_LE;
+        case COND_ABOVE:
+            return COND_BELOW;
+        case COND_AE:
+            return COND_BE;
+        case COND_BELOW:
+            return COND_ABOVE;
+        case COND_BE:
+            return COND_AE;
+    }
+}
+
 enum FloatCondition {
     FCOND_EQ, FCOND_NE, FCOND_LT, FCOND_LE, FCOND_GT, FCOND_GE
 };

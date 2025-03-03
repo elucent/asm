@@ -1480,28 +1480,40 @@ struct AMD64Assembler {
     }
 
     static inline void cmpcc8(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
-        Opcode op = b.kind == ASMVal::IMM ? Opcode::withExt(0x80, 0x07) : Opcode::from(0x38);
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         cmp8(as, a, b);
         unaryop(as, BYTE, Opcode::withExt(0x0f, 0x90 + CCodes[cc], 0x00), dst);
         zxt8(as, dst, dst);
     }
 
     static inline void cmpcc16(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
-        Opcode op = b.kind == ASMVal::IMM ? Opcode::withExt(0x80, 0x07) : Opcode::from(0x38);
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         cmp16(as, a, b);
         unaryop(as, BYTE, Opcode::withExt(0x0f, 0x90 + CCodes[cc], 0x00), dst);
         zxt8(as, dst, dst);
     }
 
     static inline void cmpcc32(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
-        Opcode op = b.kind == ASMVal::IMM ? Opcode::withExt(0x80, 0x07) : Opcode::from(0x38);
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         cmp32(as, a, b);
         unaryop(as, BYTE, Opcode::withExt(0x0f, 0x90 + CCodes[cc], 0x00), dst);
         zxt8(as, dst, dst);
     }
 
     static inline void cmpcc64(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
-        Opcode op = b.kind == ASMVal::IMM ? Opcode::withExt(0x80, 0x07) : Opcode::from(0x38);
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         cmp64(as, a, b);
         unaryop(as, BYTE, Opcode::withExt(0x0f, 0x90 + CCodes[cc], 0x00), dst);
         zxt8(as, dst, dst);
@@ -2121,6 +2133,10 @@ struct AMD64Assembler {
     }
 
     static inline void brcc8(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         if (cc == COND_TEST_ZERO || cc == COND_TEST_NONZERO)
             test8(as, a, b);
         else
@@ -2129,6 +2145,10 @@ struct AMD64Assembler {
     }
 
     static inline void brcc16(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         if (cc == COND_TEST_ZERO || cc == COND_TEST_NONZERO)
             test16(as, a, b);
         else
@@ -2137,6 +2157,10 @@ struct AMD64Assembler {
     }
 
     static inline void brcc32(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         if (cc == COND_TEST_ZERO || cc == COND_TEST_NONZERO)
             test32(as, a, b);
         else
@@ -2145,6 +2169,10 @@ struct AMD64Assembler {
     }
 
     static inline void brcc64(Assembly& as, Condition cc, ASMVal dst, ASMVal a, ASMVal b) {
+        if (a.kind == ASMVal::IMM) {
+            swap(a, b);
+            cc = commute(cc);
+        }
         if (cc == COND_TEST_ZERO || cc == COND_TEST_NONZERO)
             test64(as, a, b);
         else
