@@ -1802,8 +1802,8 @@ struct Compose {
     static MaybePair<ASMVal> place_scalar_parameter(void* state, Repr repr) { return B::place_scalar_parameter(state, repr); }
     static MaybePair<ASMVal> place_aggregate_parameter(void* state, const_slice<Repr> members) { return B::place_aggregate_parameter(state, members); }
     static void finish_placing_parameters(void* state) { B::finish_placing_parameters(state); }
-    static MaybePair<ASMVal> place_scalar_return_value(Repr repr) { return B::place_scalar_return_value(repr); }
-    static MaybePair<ASMVal> place_aggregate_return_value(const_slice<Repr> members) { return B::place_aggregate_return_value(members); }
+    static MaybePair<ASMVal> place_scalar_return_value(void* state, Repr repr) { return B::place_scalar_return_value(state, repr); }
+    static MaybePair<ASMVal> place_aggregate_return_value(void* state, const_slice<Repr> members) { return B::place_aggregate_return_value(state, members); }
 };
 
 // Overridable interface for a Target.
@@ -1937,8 +1937,8 @@ struct TargetInterface {
     virtual MaybePair<ASMVal> place_scalar_parameter(void* state, Repr repr) const = 0;
     virtual MaybePair<ASMVal> place_aggregate_parameter(void* state, const_slice<Repr> members) const = 0;
     virtual void finish_placing_parameters(void* state) const = 0;
-    virtual MaybePair<ASMVal> place_scalar_return_value(Repr repr) const = 0;
-    virtual MaybePair<ASMVal> place_aggregate_return_value(const_slice<Repr> members) const = 0;
+    virtual MaybePair<ASMVal> place_scalar_return_value(void* state, Repr repr) const = 0;
+    virtual MaybePair<ASMVal> place_aggregate_return_value(void* state, const_slice<Repr> members) const = 0;
 
     virtual mreg framePtr() const = 0;
     virtual mreg stackPtr() const = 0;
@@ -2075,8 +2075,8 @@ struct TargetImplementation : public TargetInterface {
     virtual MaybePair<ASMVal> place_scalar_parameter(void* state, Repr repr) const override { return Target::place_scalar_parameter(state, repr); };
     virtual MaybePair<ASMVal> place_aggregate_parameter(void* state, const_slice<Repr> members) const override { return Target::place_aggregate_parameter(state, members); };
     virtual void finish_placing_parameters(void* state) const override { Target::finish_placing_parameters(state); };
-    virtual MaybePair<ASMVal> place_scalar_return_value(Repr repr) const override { return Target::place_scalar_return_value(repr); }
-    virtual MaybePair<ASMVal> place_aggregate_return_value(const_slice<Repr> members) const override { return Target::place_aggregate_return_value(members); }
+    virtual MaybePair<ASMVal> place_scalar_return_value(void* state, Repr repr) const override { return Target::place_scalar_return_value(state, repr); }
+    virtual MaybePair<ASMVal> place_aggregate_return_value(void* state, const_slice<Repr> members) const override { return Target::place_aggregate_return_value(state, members); }
 
     virtual mreg framePtr() const override { return Target::fp; }
     virtual mreg stackPtr() const override { return Target::sp; }

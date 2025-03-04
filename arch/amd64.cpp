@@ -27,7 +27,7 @@ struct PlacementState {
 };
 
 void* AMD64LinuxAssembler::start_placing_parameters() {
-    auto p = new PlacementState { {}, {}, 16 };
+    auto p = new PlacementState { {}, {}, 0 };
     for (i32 i = 5; i >= 0; i --)
         p->argumentGPs.push(GP_ARGS[i]);
     for (i32 i = 7; i >= 0; i --)
@@ -43,14 +43,14 @@ MaybePair<ASMVal> AMD64LinuxAssembler::place_scalar_parameter(void* state, Repr 
         case Size::BITS32:
         case Size::BITS64:
             if (placement.argumentGPs.size() == 0)
-                return Mem(RBP, placement.allocateStack(scalar.size(), scalar.alignment()));
+                return Mem(RSP, placement.allocateStack(scalar.size(), scalar.alignment()));
             else
                 return GP(placement.takeGP());   
         case Size::FLOAT32:
         case Size::FLOAT64:
         case Size::VECTOR:
             if (placement.argumentFPs.size() == 0)
-                return Mem(RBP, placement.allocateStack(scalar.size(), scalar.alignment()));
+                return Mem(RSP, placement.allocateStack(scalar.size(), scalar.alignment()));
             else
                 return FP(placement.takeFP());
         case Size::MEMORY:
@@ -88,7 +88,7 @@ MaybePair<ASMVal> AMD64LinuxAssembler::place_aggregate_parameter(void* state, co
         else if (placement.argumentGPs.size())
             return GP(placement.takeGP());
         else
-            return Mem(RBP, placement.allocateStack(totalSize, maxAlignment));
+            return Mem(RSP, placement.allocateStack(totalSize, maxAlignment));
     } else if (totalSize <= 16) {
         ASMVal first, second;
         if (sawFloatInFirst && !sawIntInFirst && placement.argumentFPs.size())
@@ -96,24 +96,24 @@ MaybePair<ASMVal> AMD64LinuxAssembler::place_aggregate_parameter(void* state, co
         else if (placement.argumentGPs.size())
             first = GP(placement.takeGP());
         else
-            return Mem(RBP, placement.allocateStack(totalSize, maxAlignment));
+            return Mem(RSP, placement.allocateStack(totalSize, maxAlignment));
         
         if (sawFloatInSecond && !sawIntInSecond && placement.argumentFPs.size())
             second = FP(placement.takeFP());
         else if (placement.argumentGPs.size())
             second = GP(placement.takeGP());
         else
-            return Mem(RBP, placement.allocateStack(totalSize - 8, maxAlignment));
+            return Mem(RSP, placement.allocateStack(totalSize - 8, maxAlignment));
         return { first, second };
     } else
-        return Mem(RBP, placement.allocateStack(totalSize, maxAlignment));
+        return Mem(RSP, placement.allocateStack(totalSize, maxAlignment));
 }
 
 void AMD64LinuxAssembler::finish_placing_parameters(void* state) {
     delete (PlacementState*)state;
 }
 
-MaybePair<ASMVal> AMD64LinuxAssembler::place_scalar_return_value(Repr scalar) {
+MaybePair<ASMVal> AMD64LinuxAssembler::place_scalar_return_value(void* state, Repr scalar) {
     switch (scalar.kind()) {
         case Size::BITS8:
         case Size::BITS16:
@@ -129,9 +129,9 @@ MaybePair<ASMVal> AMD64LinuxAssembler::place_scalar_return_value(Repr scalar) {
     }
 }
 
-MaybePair<ASMVal> AMD64LinuxAssembler::place_aggregate_return_value(const_slice<Repr> members) {
+MaybePair<ASMVal> AMD64LinuxAssembler::place_aggregate_return_value(void* state, const_slice<Repr> members) {
     if (members.size() == 1)
-        return place_scalar_return_value(members[0]);
+        return place_scalar_return_value(state, members[0]);
 
     u32 totalSize = 0, maxAlignment = 1;
     bool sawFloatInFirst = false, sawFloatInSecond = false;
@@ -169,6 +169,15 @@ MaybePair<ASMVal> AMD64LinuxAssembler::place_aggregate_return_value(const_slice<
         else
             second = GP(!sawFloatInFirst || sawIntInFirst ? RDX : RAX);
         return { first, second };
-    } else
-        unreachable("TODO: Implement big return values.");
+    } else {
+        // Big return values mean the caller should allocate a buffer and pass
+        // its address as an implied first argument. The callee should then
+        // return that same pointer back to the caller after writing the return
+        // value into it. We do a bit of a hacky solution here for this case,
+        // returning a memory location (to distinguish this location from a
+        // single register or register pair), but with the base equal to the
+        // register the caller passes the pointer into, and with the offset
+        // equal to the register the callee should return it through.
+        return { Mem(((PlacementState*)state)->takeGP(), RAX), {} };
+    }
 }

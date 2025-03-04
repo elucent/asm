@@ -2505,8 +2505,8 @@ struct AMD64LinuxAssembler : public AMD64Assembler {
     static MaybePair<ASMVal> place_aggregate_parameter(void* state, const_slice<Repr> members);
     static void finish_placing_parameters(void* state);
 
-    static MaybePair<ASMVal> place_scalar_return_value(Repr scalar);
-    static MaybePair<ASMVal> place_aggregate_return_value(const_slice<Repr> members);
+    static MaybePair<ASMVal> place_scalar_return_value(void* state, Repr scalar);
+    static MaybePair<ASMVal> place_aggregate_return_value(void* state, const_slice<Repr> members);
 };
 
 struct AMD64DarwinAssembler : public AMD64LinuxAssembler {};
