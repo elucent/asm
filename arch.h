@@ -1266,6 +1266,7 @@ struct FakeAssembler {
 
     constexpr static mreg fp = 30;
     constexpr static mreg sp = 31;
+    constexpr static EndianOrder endianness = EndianOrder::LITTLE;
 
     static inline RegSet caller_saved_gps() {
         return RegSet(GPREGS, 16);
@@ -1672,6 +1673,7 @@ struct Compose {
 
     constexpr static mreg fp = B::fp;
     constexpr static mreg sp = B::sp;
+    constexpr static EndianOrder endianness = B::endianness;
 
     #define NULLARY(upper, lower) static void lower(Assembly& as) { A::lower(as); B::lower(as); }
     

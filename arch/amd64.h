@@ -21,6 +21,7 @@ struct AMD64Assembler {
     };
     
     constexpr static mreg fp = RBP, sp = RSP;
+    constexpr static EndianOrder endianness = EndianOrder::LITTLE;
 
     static constexpr inline RegSet gps() {
         return RegSet(GP_REGS, 14);
@@ -221,7 +222,7 @@ struct AMD64Assembler {
                     else if (modb == 0b10) as.code.writeLE<i32>(rm.offset);
                     break;
                 case ASMVal::LOCAL_LABEL:
-                as.code.writeLE<i32>(0);
+                    as.code.writeLE<i32>(0);
                     as.ref(CODE_SECTION, DEF_LOCAL, Reloc::REL32_LE, rm.sym);
                     break;
                 case ASMVal::FUNC_LABEL:
